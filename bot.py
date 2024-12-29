@@ -40,7 +40,7 @@ DATABASE_CONFIG = {
 def get_db_connection():
     try:
         conn = psycopg2.connect(**DATABASE_CONFIG)
-        print("DB connected.")
+        print("Database connected.")
         return conn
     except OperationalError as e:
         print(f"Operational error occurred: {e}")
@@ -352,6 +352,5 @@ async def resolutions(interaction: discord.Interaction):
     delete_button.callback = delete_resolution_callback
 
     await interaction.response.send_message("Choose an option to manage your New Year's resolutions:", view=view, ephemeral=True)
-
 
 bot.run(DISCORD_BOT_TOKEN)

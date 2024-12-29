@@ -60,37 +60,40 @@ def get_db_connection():
 
 
 def create_resolution(user_id, resolution):
-    conn = get_db_connection()
-    cur = conn.cursor()
+    connection = get_db_connection()
+    cur = connection.cursor()
     cur.execute("INSERT INTO resolutions (user_id, resolution) VALUES (%s, %s)", (user_id, resolution))
-    conn.commit()
+    connection.commit()
     cur.close()
-    conn.close()
+    connection.close()
 
 def read_resolution(user_id):
-    conn = get_db_connection()
-    cur = conn.cursor()
+    connection = get_db_connection()
+    cur = connection.cursor()
     cur.execute("SELECT resolution FROM resolutions WHERE user_id = %s", (user_id,))
-    result = cur.fetchone()
+    result = cur.fetchall()
     cur.close()
-    conn.close()
-    return result[0] if result else None
+    connection.close()
+    return result
 
-def update_resolution(user_id, resolution):
-    conn = get_db_connection()
-    cur = conn.cursor()
-    cur.execute("UPDATE resolutions SET resolution = %s WHERE user_id = %s", (resolution, user_id))
-    conn.commit()
+def update_resolution(user_id, old_resolution, new_resolution):
+    connection = get_db_connection()
+    cur = connection.cursor()
+    cur.execute("UPDATE resolutions SET resolution = %s WHERE user_id = %s AND resolution = %s", 
+                (new_resolution, user_id, old_resolution))
+    connection.commit()
     cur.close()
-    conn.close()
+    connection.close()
 
-def delete_resolution(user_id):
-    conn = get_db_connection()
-    cur = conn.cursor()
-    cur.execute("DELETE FROM resolutions WHERE user_id = %s", (user_id,))
-    conn.commit()
+def delete_resolution(user_id, resolution):
+    connection = get_db_connection()
+    cur = connection.cursor()
+    cur.execute("DELETE FROM resolutions WHERE user_id = %s AND resolution = %s", 
+                (user_id, resolution))
+    connection.commit()
     cur.close()
-    conn.close()
+    connection.close()
+
 
 @bot.event
 async def on_ready():
@@ -265,12 +268,12 @@ async def ask(interaction: discord.Interaction):
     await interaction.response.send_message("Choose a type of quote:", view=view)
 
 
-@tree.command(name="resolutions", description="Manage your New Year resolutions")
+@tree.command(name="resolutions", description="Manage your New Year's resolutions")
 async def resolutions(interaction: discord.Interaction):
     create_button = Button(label="Create a Resolution", style=discord.ButtonStyle.primary, custom_id="create_resolution")
-    read_button = Button(label="Read Your Resolution", style=discord.ButtonStyle.green, custom_id="read_resolution")
-    update_button = Button(label="Update Your Resolution", style=discord.ButtonStyle.blurple, custom_id="update_resolution")
-    delete_button = Button(label="Delete Your Resolution", style=discord.ButtonStyle.danger, custom_id="delete_resolution")
+    read_button = Button(label="Read Your Resolutions", style=discord.ButtonStyle.green, custom_id="read_resolutions")
+    update_button = Button(label="Update a Resolution", style=discord.ButtonStyle.blurple, custom_id="update_resolution")
+    delete_button = Button(label="Delete a Resolution", style=discord.ButtonStyle.danger, custom_id="delete_resolution")
 
     view = View()
     view.add_item(create_button)
@@ -280,50 +283,73 @@ async def resolutions(interaction: discord.Interaction):
 
     async def create_resolution_callback(interaction: discord.Interaction):
         await interaction.response.defer()
-        await interaction.followup.send("What is your New Year's resolution?")
+        await interaction.followup.send("What is your New Year's resolution?", ephemeral=True)
         try:
             response = await bot.wait_for("message", check=lambda m: m.author == interaction.user, timeout=30.0)
         except asyncio.TimeoutError:
-            await interaction.followup.send("You took too long to respond.")
+            await interaction.followup.send("You took too long to respond.", ephemeral=True)
             return
         create_resolution(str(interaction.user.id), response.content)
-        await interaction.followup.send(f"Your resolution has been set to: {response.content}")
+        await interaction.followup.send(f"Your resolution has been set to: {response.content}", ephemeral=True)
 
-    async def read_resolution_callback(interaction: discord.Interaction):
-        resolution = read_resolution(str(interaction.user.id))
-        if resolution:
-            await interaction.response.send_message(f"Your current resolution is: {resolution}")
+    async def read_resolutions_callback(interaction: discord.Interaction):
+        resolutions = read_resolution(str(interaction.user.id))
+        if resolutions:
+            resolution_list = "\n".join([f"{i+1}. {res[0]}" for i, res in enumerate(resolutions)])
+            await interaction.response.send_message(f"Your resolutions:\n{resolution_list}", ephemeral=True)
         else:
-            await interaction.response.send_message("You don't have a resolution set yet.")
+            await interaction.response.send_message("You don't have any resolutions set yet.", ephemeral=True)
 
     async def update_resolution_callback(interaction: discord.Interaction):
-        resolution = read_resolution(str(interaction.user.id))
-        if resolution:
-            await interaction.response.defer()
-            await interaction.followup.send(f"Your current resolution is: {resolution}\nWhat would you like to update it to?")
+        resolutions = read_resolution(str(interaction.user.id))
+        if resolutions:
+            resolution_list = "\n".join([f"{i+1}. {res[0]}" for i, res in enumerate(resolutions)])
+            await interaction.response.send_message(f"Your current resolutions:\n{resolution_list}\nWhich resolution number would you like to update? (Enter the number)", ephemeral=True)
             try:
                 response = await bot.wait_for("message", check=lambda m: m.author == interaction.user, timeout=30.0)
+                resolution_number = int(response.content.strip()) - 1
+                if 0 <= resolution_number < len(resolutions):
+                    old_resolution = resolutions[resolution_number][0]
+                    await interaction.followup.send(f"Your current resolution is: {old_resolution}\nWhat would you like to update it to?", ephemeral=True)
+                    new_response = await bot.wait_for("message", check=lambda m: m.author == interaction.user, timeout=30.0)
+                    new_resolution = new_response.content
+                    update_resolution(str(interaction.user.id), old_resolution, new_resolution)
+                    await interaction.followup.send(f"Your resolution has been updated to: {new_resolution}", ephemeral=True)
+                else:
+                    await interaction.followup.send("Invalid resolution number. Please enter a valid number.", ephemeral=True)
             except asyncio.TimeoutError:
-                await interaction.followup.send("You took too long to respond.")
-                return
-            update_resolution(str(interaction.user.id), response.content)
-            await interaction.followup.send(f"Your resolution has been updated to: {response.content}")
+                await interaction.followup.send("You took too long to respond.", ephemeral=True)
+            except ValueError:
+                await interaction.followup.send("Please enter a valid number.", ephemeral=True)
         else:
-            await interaction.followup.send("You don't have a resolution set yet. Use the 'Create a Resolution' button first.")
+            await interaction.followup.send("You don't have any resolutions set yet. Use the 'Create a Resolution' button first.", ephemeral=True)
 
     async def delete_resolution_callback(interaction: discord.Interaction):
-        resolution = read_resolution(str(interaction.user.id))
-        if resolution:
-            delete_resolution(str(interaction.user.id))
-            await interaction.response.send_message("Your resolution has been deleted.")
+        resolutions = read_resolution(str(interaction.user.id))
+        if resolutions:
+            resolution_list = "\n".join([f"{i+1}. {res[0]}" for i, res in enumerate(resolutions)])
+            await interaction.response.send_message(f"Your current resolutions:\n{resolution_list}\nWhich resolution number would you like to delete? (Enter the number)", ephemeral=True)
+            try:
+                response = await bot.wait_for("message", check=lambda m: m.author == interaction.user, timeout=30.0)
+                resolution_number = int(response.content.strip()) - 1
+                if 0 <= resolution_number < len(resolutions):
+                    resolution_to_delete = resolutions[resolution_number][0]
+                    delete_resolution(str(interaction.user.id), resolution_to_delete)
+                    await interaction.followup.send(f"Resolution '{resolution_to_delete}' has been deleted.", ephemeral=True)
+                else:
+                    await interaction.followup.send("Invalid resolution number. Please enter a valid number.", ephemeral=True)
+            except asyncio.TimeoutError:
+                await interaction.followup.send("You took too long to respond.", ephemeral=True)
+            except ValueError:
+                await interaction.followup.send("Please enter a valid number.", ephemeral=True)
         else:
-            await interaction.response.send_message("You don't have a resolution set yet.")
+            await interaction.followup.send("You don't have any resolutions set yet. Use the 'Create a Resolution' button first.", ephemeral=True)
 
     create_button.callback = create_resolution_callback
-    read_button.callback = read_resolution_callback
+    read_button.callback = read_resolutions_callback
     update_button.callback = update_resolution_callback
     delete_button.callback = delete_resolution_callback
 
-    await interaction.response.send_message("Choose an option to manage your New Year's resolution:", view=view)
+    await interaction.response.send_message("Choose an option to manage your New Year's resolutions:", view=view, ephemeral=True)
 
 bot.run(DISCORD_BOT_TOKEN)

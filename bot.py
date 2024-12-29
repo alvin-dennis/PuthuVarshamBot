@@ -30,11 +30,11 @@ bot = commands.Bot(command_prefix="/", intents=intents)
 tree = bot.tree  
 
 DATABASE_CONFIG = {
-    "dbname": "resolutions_db",
-    "user": "postgres",
-    "password": "6283",
-    "host": "localhost",
-    "port": "5432"
+    "dbname": os.getenv("DB_NAME"),
+    "user": os.getenv("DB_USER"),
+    "password": os.getenv("DB_PASSWORD"),
+    "host": os.getenv("DB_HOST"),
+    "port": os.getenv("DB_PORT")
 }
 
 def get_db_connection():

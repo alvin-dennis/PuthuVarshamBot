@@ -9,7 +9,6 @@ from dotenv import load_dotenv
 from keep_alive import keep_alive
 
 import psycopg2
-from psycopg2 import OperationalError, InterfaceError, DatabaseError
 
 import asyncio
 
@@ -34,27 +33,18 @@ bot = commands.Bot(command_prefix="/", intents=intents)
 tree = bot.tree  
 
 DATABASE_CONFIG = {
-    "dbname": os.getenv("DB_NAME"),
-    "user": os.getenv("DB_USER"),
-    "password": os.getenv("DB_PASSWORD"),
-    "host": os.getenv("DB_HOST"),
-    "port": os.getenv("DB_PORT")
+    "dbname": "resolutions_db",
+    "user": "postgres",
+    "password": "6283",
+    "host": "localhost",
+    "port": "5432"
 }
 
 def get_db_connection():
     try:
-        conn = psycopg2.connect(**DATABASE_CONFIG)
+        connection = psycopg2.connect(**DATABASE_CONFIG)
         print("Database connected.")
-        return conn
-    except OperationalError as e:
-        print(f"Operational error occurred: {e}")
-        return None
-    except InterfaceError as e:
-        print(f"Interface error occurred: {e}")
-        return None
-    except DatabaseError as e:
-        print(f"Database error occurred: {e}")
-        return None
+        return connection
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
 

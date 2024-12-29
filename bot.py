@@ -99,7 +99,8 @@ def split_message(message, max_length=100):
 
 @tree.command(name="hello", description="Say hello to the bot!")
 async def hello(interaction: discord.Interaction):
-    await interaction.response.send_message("Hello, world!")
+    display_name = interaction.user.display_name
+    await interaction.response.send_message(f"Hello, {display_name}!")
 
 
 @tree.command(name="ping", description="Test the bot's response time.")
@@ -110,7 +111,12 @@ async def ping(interaction: discord.Interaction):
 @tree.command(name="echo", description="Echo a message back to you.")
 @app_commands.describe(message="The message to echo.")
 async def echo(interaction: discord.Interaction, message: str):
-    await interaction.response.send_message(f"Echoing: {message}")
+    await interaction.response.send_message(f" Echoing, {message}")
+
+@tree.command(name="wish", description="Send a personalized new year wish to the user.")
+@app_commands.describe(message="Send a personalized new year greeting to the user.")
+async def echo(interaction: discord.Interaction, message: str):
+    await interaction.response.send_message(f" {message}")
 
 
 @tree.command(name="greet", description="Send a personalized greeting to the user.")

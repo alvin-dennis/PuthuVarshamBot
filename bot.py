@@ -6,6 +6,8 @@ import os
 import random
 from dotenv import load_dotenv
 
+from keep_alive import keep_alive
+
 import psycopg2
 from psycopg2 import OperationalError, InterfaceError, DatabaseError
 
@@ -21,6 +23,8 @@ scheduler = AsyncIOScheduler()
 countdown_channel = None
 
 load_dotenv()
+
+keep_alive()
 
 DISCORD_BOT_TOKEN = os.getenv("DISCORD_BOT_TOKEN")
 

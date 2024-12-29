@@ -31,7 +31,7 @@
     cd PuthuVarshamBot
     ```
 
-3. Set up a virtual environment (optional but recommended):
+3. Set up a virtual environment:
     - For **Linux/macOS**:
       ```bash
       python3 -m venv venv
@@ -48,7 +48,7 @@
       ```
     - For **Windows**:
       ```bash
-      venv\Scripts\activate.ps1
+      venv\Scripts\Activate.ps1
       ```
 
 5. Install the required dependencies:

@@ -29,7 +29,7 @@ DISCORD_BOT_TOKEN = os.getenv("DISCORD_BOT_TOKEN")
 
 intents = discord.Intents.default()
 intents.message_content = True
-bot = commands.Bot(command_prefix="/", intents=intents)
+bot = commands.Bot(command_prefix="!", intents=intents)
 tree = bot.tree  
 
 DATABASE_CONFIG = {
@@ -170,7 +170,6 @@ async def autocountdown(interaction: discord.Interaction):
         )
         await interaction.response.send_message(countdown_message)
 
-
 async def update_countdown():
     global countdown_channel
     if countdown_channel is None:
@@ -178,7 +177,7 @@ async def update_countdown():
         return
     now = datetime.now()
     if now >= NEW_YEAR:
-        await countdown_channel.send("🎊🌟 Wishing you an amazing 2025, Alvin! 🥳 May your year be filled with endless smiles, big dreams, and unforgettable moments! ✨🍀🎉")
+        await countdown_channel.send("🎊🌟 Wishing you an amazing 2025! 🥳 May your year be filled with endless smiles, big dreams, and unforgettable moments! ✨🍀🎉")
         scheduler.shutdown()
     else:
         delta = NEW_YEAR - now
@@ -189,6 +188,7 @@ async def update_countdown():
 
         )
         await countdown_channel.send(countdown_message)
+
 
 @tree.command(name="quotes", description="Gives out a motivational or festive message")
 async def ask(interaction: discord.Interaction):
@@ -288,7 +288,7 @@ async def resolutions(interaction: discord.Interaction):
         create_resolution(str(interaction.user.id), response.content)
         await interaction.followup.send(f"Your resolution has been set to: {response.content}", ephemeral=True)
 
-    async def read_resolutions_callback(interaction: discord.Interaction):
+    async def read_resolution_callback(interaction: discord.Interaction):
         resolutions = read_resolution(str(interaction.user.id))
         if resolutions:
             resolution_list = "\n".join([f"{i+1}. {res[0]}" for i, res in enumerate(resolutions)])
@@ -342,10 +342,92 @@ async def resolutions(interaction: discord.Interaction):
             await interaction.followup.send("You don't have any resolutions set yet. Use the 'Create a Resolution' button first.", ephemeral=True)
 
     create_button.callback = create_resolution_callback
-    read_button.callback = read_resolutions_callback
+    read_button.callback = read_resolution_callback
     update_button.callback = update_resolution_callback
     delete_button.callback = delete_resolution_callback
 
     await interaction.response.send_message("Choose an option to manage your New Year's resolutions:", view=view, ephemeral=True)
+
+
+@tree.command(name="predict", description="Get a prediction for your zodiac sign for 2025.")
+async def predict(interaction: discord.Interaction):
+    view = ZodiacButtonView()
+    await interaction.response.send_message("Select your zodiac sign to get a prediction for 2025:", view=view, ephemeral=True)
+
+zodiac_predictions = {
+    "Leo": "This year is all about leadership and confidence for you.",
+    "Virgo": "Expect a year filled with growth in personal and professional areas.",
+    "Libra": "Balance and harmony will define your upcoming year.",
+    "Scorpio": "Transformation and new beginnings are on the horizon.",
+    "Sagittarius": "Adventure and learning will be your focus this year.",
+    "Capricorn": "Hard work will bring significant rewards for you.",
+    "Aquarius": "Innovation and creativity will lead you to success.",
+    "Pisces": "Intuition and emotions will guide you through this year.",
+    "Aries": "Energy and determination will help you achieve your goals.",
+    "Taurus": "Stability and prosperity await you this year.",
+    "Gemini": "Communication and adaptability will open new opportunities.",
+    "Cancer": "Your year will be filled with love and nurturing relationships.",
+}
+
+class ZodiacButton(discord.ui.Button):
+    def __init__(self, sign):
+        super().__init__(label=sign, style=discord.ButtonStyle.primary)
+        self.sign = sign
+
+    async def callback(self, interaction: discord.Interaction):
+        prediction = zodiac_predictions.get(self.sign, "No prediction available.")
+        await interaction.response.send_message(f"Prediction for {self.sign}: {prediction}", ephemeral=True)
+
+class ZodiacButtonView(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=None) 
+        for sign in zodiac_predictions.keys():
+            self.add_item(ZodiacButton(sign))
+
+
+@tree.command(name="universal-newyear-greet", description="Celebrate the New Year with a greeting in your language!")
+async def universalnygreet(interaction: discord.Interaction):
+    view = LanguageView(interaction)
+    await interaction.response.send_message(
+        "Select a language from the buttons below!", 
+        view=view, 
+        ephemeral=True  
+    )
+
+new_year_messages = {
+    "English": "Happy New Year!",
+    "Hindi": "नया साल मुबारक हो!",
+    "Bengali": "নতুন বছরের শুভেচ্ছা!",
+    "Punjabi": "ਨਵਾਂ ਸਾਲ ਮੁਬਾਰਕ!",
+    "Tamil": "புத்தாண்டு வாழ்த்துக்கள்!",
+    "Telugu": "కొత్త సంవత్సర శుభాకాంక్షలు!",
+    "Urdu": "نیا سال مبارک ہو!",
+    "Kannada": "ಹೊಸ ವರ್ಷದ ಶುಭಾಶಯಗಳು!",
+    "Malayalam": "പുതുവത്സരാശംസകൾ!",
+    "Marathi": "नवीन वर्षाच्या शुभेच्छा!",
+    "Gujarati": "નવું વર્ષ મુબારક!",
+    "Odia": "ନୂଆବର୍ଷର ଶୁଭେଚ୍ଛା!",
+    "Assamese": "নৱবৰ্ষৰ শুভেচ্ছা!",
+}
+
+class LanguageView(discord.ui.View):
+    def __init__(self, interaction: discord.Interaction):
+        super().__init__(timeout=None)
+        self.interaction = interaction
+        for lang in new_year_messages.keys():
+            self.add_item(LanguageButton(lang, new_year_messages[lang]))
+
+class LanguageButton(discord.ui.Button):
+    def __init__(self, language: str, message: str):
+        super().__init__(label=language, style=discord.ButtonStyle.primary)
+        self.language = language
+        self.message = message
+
+    async def callback(self, interaction: discord.Interaction):
+        await interaction.response.send_message(
+            content=f"{self.message}🎉✨",
+            ephemeral=False, 
+        )
+
 
 bot.run(DISCORD_BOT_TOKEN)

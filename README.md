@@ -86,13 +86,15 @@
 
 - **`/wish [message]`**: Sends a personalized new year wish message tp the user or others.
 
+- **`/universal-newyear-greet`**: Celebrate the New Year with a greeting in your language! This command sends a personalized New Year greeting based on the language preference of the user.
+
 ### Quotes
 - **`/quotes`**: Shares a random motivational or festive quote.
 
 ### Countdown
 - **Static Countdown**:  
   **`/static-countdown`**  
-  Displays the countdown to a specific date and time in the format `YYYY-MM-DD HH:MM:SS`.
+  Displays the countdown to a specific date and time in the format `⏳ Only **{days} days, {hours} hours, {minutes} minutes, and {seconds} seconds** to go! 🕒✨`.
 
 - **Automated Countdown**:  
   **`/automated-countdown`**  
@@ -104,6 +106,9 @@
   - **Read Your Resolutions**: View your current resolutions.
   - **Update a Resolution**: Modify an existing resolution.
   - **Delete a Resolution**: Remove a resolution.
+
+### New Year Predictions
+- **`/predict`**: Get a prediction for your zodiac sign for 2025.
 
 ### Utility
 - **`/ping`**: Checks the bot's status and responds with "Pong!" to confirm the bot is online.
